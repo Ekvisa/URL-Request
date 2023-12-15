@@ -1,29 +1,37 @@
 package com.example.urlrequest
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import retrofit2.http.GET
-import retrofit2.http.Query
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import androidx.appcompat.app.AppCompatActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Query
 
 fun main() {
+
     runBlocking {
-        try {
-            val weatherData = withContext(Dispatchers.IO) {
-                weatherApi.getWeatherData(53.198627, 50.113987, "3ef1701acf0ed1315f4a10c81763bc96")
+
+        val response = withContext(Dispatchers.IO) {
+            weatherApi.getWeatherData(53.198627, 50.113987, "3ef1701acf0ed1315f4a10c81763bc96")
+        }
+        if (response.isSuccessful) {
+            val weatherMain = response.body()?.main
+            if (weatherMain != null) {
+                Log.d("weather log", "Temperature: ${weatherMain.temp} K")
+                Log.d("weather log", "Pressure: ${weatherMain.pressure} hPa")
+                Log.d("weather log", "Humidity: ${weatherMain.humidity}%")
+            } else {
+                println("Response body is null")
             }
-
-            Log.d("weather log", "Temperature: ${weatherData.main.temp} K")
-            Log.d("weather log", "Pressure: ${weatherData.main.pressure} hPa")
-            Log.d("weather log", "Humidity: ${weatherData.main.humidity}%")
-
-        } catch (e: Exception) {
-            println("Error: ${e.message}")
+        } else {
+            val errorCode = response.code()
+            val errorMessage = response.message()
+            println("Error: $errorCode, $errorMessage")
         }
     }
 }
@@ -42,7 +50,7 @@ interface WeatherApi {
         @Query("lat") lat: Double,
         @Query("lon") lon: Double,
         @Query("appid") apiKey: String
-    ): WeatherData
+    ): Response<WeatherData>
 }
 
 data class WeatherData(
